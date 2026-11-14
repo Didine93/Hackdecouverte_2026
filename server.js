@@ -1,6 +1,9 @@
 // Serveur LienClair — Node 18+, aucune dépendance.
 // Lancer (PowerShell) : $env:VT_API_KEY="votre_cle"; node server.js  → http://localhost:3000
-const http = require('http'), fs = require('fs'), path = require('path');
+// HTTPS (facultatif) : $env:TLS_CERT="localhost+1.pem"; $env:TLS_KEY="localhost+1-key.pem"
+const http = require('http'), https = require('https'), fs = require('fs'), path = require('path');
+const TLS = process.env.TLS_CERT && process.env.TLS_KEY
+  ? { cert: fs.readFileSync(process.env.TLS_CERT), key: fs.readFileSync(process.env.TLS_KEY) } : null;
 const KEY = process.env.VT_API_KEY, PORT = process.env.PORT || 3000;
 const VT = 'https://www.virustotal.com/api/v3';
 const hits = new Map(); // limitation simple : 8 analyses / minute / IP
@@ -34,8 +37,9 @@ async function analyse(url) {
   return out;
 }
 
-http.createServer(async (req, res) => {
+const handler = async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (TLS) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
   res.setHeader('Referrer-Policy', 'no-referrer');
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -65,4 +69,6 @@ http.createServer(async (req, res) => {
     return;
   }
   res.statusCode = 404; res.end('Introuvable');
-}).listen(PORT, () => console.log('LienClair → http://localhost:' + PORT));
+};
+(TLS ? https.createServer(TLS, handler) : http.createServer(handler))
+  .listen(PORT, () => console.log('LienClair → ' + (TLS ? 'https' : 'http') + '://localhost:' + PORT));

@@ -1,0 +1,5 @@
+# Certificats et clés privées : ne jamais publier
+*.pem
+*.key
+.env
+node_modules/
