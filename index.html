@@ -105,6 +105,7 @@ const DB=[
 {n:'Banque Laurentienne',c:'Banque',d:['banquelaurentienne.ca','lbcgroup.ca'],k:['laurentienne']},
 {n:'HSBC Canada',c:'Banque',d:['hsbc.ca'],k:['hsbc']},
 {n:'Interac',c:'Paiement',d:['interac.ca'],k:['interac']},
+{n:'PayPal',c:'Paiement',d:['paypal.com'],k:['paypal']},
 {n:'Omnivox / Léa',c:'Éducation',d:['omnivox.ca'],k:['omnivox']},
 {n:'Collège Dawson',c:'Collège',d:['dawsoncollege.qc.ca'],k:['dawson']},
 {n:'Collège Vanier',c:'Collège',d:['vaniercollege.qc.ca'],k:['vanier']},
@@ -131,6 +132,7 @@ const DB=[
 ];
 const SLD=['gouv.qc.ca','qc.ca','gc.ca','on.ca','bc.ca','ab.ca','co.uk'].sort((a,b)=>b.length-a.length);
 const BADTLD=['zip','xyz','top','click','buzz','tk','ml','ga','cf','gq','icu','rest','cfd','sbs','monster'];
+const FAKETLD=['com','net','org','io','ca','co','fr','info','app','dev','edu','gov','gouv','gc','qc','uk','us'];
 const SHORT=['bit.ly','tinyurl.com','t.co','is.gd','cutt.ly','rb.gy','ow.ly','goo.gl'];
 
 // ---------- Outils ----------
@@ -176,10 +178,14 @@ function local(raw){
  if(u.username||u.href.split('?')[0].includes('@'))add(30,'Contient « @ » : le vrai site est caché après ce symbole.');
  if(/xn--/.test(host))add(30,'Nom de domaine internationalisé (punycode), souvent utilisé pour imiter un site.');
  if(/[^\x00-\x7f]/.test(raw))add(25,'Contient des caractères non ASCII pouvant ressembler à des lettres normales.');
+ // Une adresse complète glissée devant le vrai domaine (ex. banque.com.autre-site.co)
+ const fake=si.sub.findIndex((l,i)=>i>0&&FAKETLD.includes(l));
+ if(fake>0)add(50,'Le début de l’adresse imite un autre site (« '+si.sub.slice(0,fake+1).join('.')+' ») mais le vrai domaine est « '+si.dom+' ».');
  if(si.sub.length>=3)add(15,'Nombre inhabituel de sous-domaines ('+si.sub.length+').');
  if(BADTLD.includes(si.tld))add(20,'Extension « .'+si.tld+' » fréquemment associée à des abus.');
- if(SHORT.includes(host))add(20,'Lien raccourci : la destination réelle est masquée.');
+ if(SHORT.includes(host))add(30,'Lien raccourci : la destination réelle est masquée.');
  if(/(login|verify|secure|update|confirm|compte|verif|connexion|signin|password)/i.test(u.pathname+u.hostname)&&r.score>0)add(10,'Mots typiques de l’hameçonnage dans l’adresse (connexion, vérification…).');
+ if(/(gratuit|free|cadeau|gift|gagn|winner|prize|reclam|claim)/i.test(u.pathname+u.hostname)&&r.score>0)add(20,'Mots d’appât dans l’adresse (gratuit, cadeau, réclamer…).');
  return r}
 
 // ---------- VirusTotal via le serveur ----------
