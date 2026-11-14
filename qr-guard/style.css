@@ -1,9 +1,17 @@
 
 /* Style général */
 
+@font-face {
+    font-family: 'Redaction 70';
+    src: url('./fonts/Redaction70-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Redaction 70', serif;
     background-color: #101827;
     color: white;
     text-align: center;
@@ -15,9 +23,11 @@ header {
     padding: 40px 20px;
 }
 
+
 header h1 {
     color: #60a5fa;
-    font-size: 36px;
+    font-family: 'Redaction 70', serif;
+    font-size: 48px;    
     letter-spacing: 3px;
 }
 
