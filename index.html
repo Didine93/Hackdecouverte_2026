@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LienClair — Vérifier un lien ou un code QR</title>
+<script src="/jsQR.js"></script>
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--ink:#14231c;--mute:#5b6b63;--line:#d5ded9;--acc:#0b6b4f;--acc-ink:#fff;--ok:#0b6b4f;--okbg:#e0f2ea;--warn:#8a5a00;--warnbg:#fdf1d3;--bad:#a4161a;--badbg:#fbe0e0}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1714;--card:#16221d;--ink:#e6f0ea;--mute:#98aba1;--line:#2a3b33;--acc:#4cc79b;--acc-ink:#06130e;--ok:#6fe0b4;--okbg:#12362a;--warn:#f0c15a;--warnbg:#3a2d0c;--bad:#ff8d8d;--badbg:#401617}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+h1{font:700 2rem/1.15 Georgia,"Times New Roman",serif;margin:0 0 6px}
+.sub{color:var(--mute);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;padding:10px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;font:inherit;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+input[type=text]{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.btn{margin-top:10px;padding:11px 18px;border:0;border-radius:8px;background:var(--acc);color:var(--acc-ink);font:600 1rem inherit;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-right:8px}
+video{width:100%;border-radius:8px;background:#000;max-height:320px}
+.hide{display:none}
+#msg{color:var(--mute);margin:8px 0 0;font-size:.92rem}
+#out{margin-top:22px}
+.badge{display:inline-block;padding:4px 12px;border-radius:99px;font-weight:700}
+.fiable{background:var(--okbg);color:var(--ok)}.suspect{background:var(--warnbg);color:var(--warn)}.malveillant{background:var(--badbg);color:var(--bad)}
+.url{word-break:break-all;font-family:Consolas,monospace;font-size:.9rem;background:var(--bg);padding:8px;border-radius:6px;margin:10px 0}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:12px 0}dt{color:var(--mute)}dd{margin:0}
+h2{font-size:1.05rem;margin:18px 0 6px}
+li{margin:3px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0;background:var(--line)}
+.bar i{display:block}
+footer{margin-top:26px;color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<h1>LienClair</h1>
+<p class="sub">Collez un lien ou scannez un code QR avant d’y toucher.</p>
+
+<section class="card">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t1" aria-selected="true">Saisir un lien</button>
+    <button role="tab" id="t2" aria-selected="false">Code QR</button>
+  </div>
+  <div id="p1">
+    <label for="u">Adresse à vérifier</label>
+    <input type="text" id="u" placeholder="https://exemple.com" autocomplete="off" spellcheck="false">
+    <button class="btn" id="go">Analyser le lien</button>
+  </div>
+  <div id="p2" class="hide">
+    <video id="v" playsinline muted class="hide"></video>
+    <canvas id="c" class="hide"></canvas>
+    <button class="btn alt" id="cam">Ouvrir la caméra</button>
+    <button class="btn alt" id="upl">Choisir une image</button>
+    <input type="file" id="f" accept="image/*" class="hide">
+  </div>
+  <p id="msg" role="status"></p>
+</section>
+
+<div id="out" aria-live="polite"></div>
+<footer>Le résultat est une aide à la décision : aucun outil ne détecte 100 % des menaces. En cas de doute, n’ouvrez pas le lien et contactez directement l’organisme par ses canaux officiels.</footer>
+</main>
+
+<script>
+// ---------- Base de sites de confiance (à enrichir) ----------
+const DB=[
+{n:'Desjardins',c:'Banque',d:['desjardins.com','accesd.com'],k:['desjardins','accesd']},
+{n:'RBC Banque Royale',c:'Banque',d:['rbc.com','rbcroyalbank.com','rbcbanqueroyale.com'],k:['rbc','royalbank']},
+{n:'Banque TD',c:'Banque',d:['td.com','tdcanadatrust.com'],k:['td','tdcanadatrust']},
+{n:'BMO',c:'Banque',d:['bmo.com'],k:['bmo']},
+{n:'CIBC',c:'Banque',d:['cibc.com'],k:['cibc']},
+{n:'Banque Nationale',c:'Banque',d:['bnc.ca','nbc.ca','banquenationale.ca'],k:['banquenationale','nationalbank']},
+{n:'Banque Scotia',c:'Banque',d:['scotiabank.com','scotiabank.ca'],k:['scotiabank','scotia']},
+{n:'Tangerine',c:'Banque',d:['tangerine.ca'],k:['tangerine']},
+{n:'Banque Laurentienne',c:'Banque',d:['banquelaurentienne.ca','lbcgroup.ca'],k:['laurentienne']},
+{n:'HSBC Canada',c:'Banque',d:['hsbc.ca'],k:['hsbc']},
+{n:'Interac',c:'Paiement',d:['interac.ca'],k:['interac']},
+{n:'Omnivox / Léa',c:'Éducation',d:['omnivox.ca'],k:['omnivox']},
+{n:'Collège Dawson',c:'Collège',d:['dawsoncollege.qc.ca'],k:['dawson']},
+{n:'Collège Vanier',c:'Collège',d:['vaniercollege.qc.ca'],k:['vanier']},
+{n:'Collège John Abbott',c:'Collège',d:['johnabbott.qc.ca'],k:['johnabbott']},
+{n:'Collège Ahuntsic',c:'Collège',d:['collegeahuntsic.qc.ca'],k:['ahuntsic']},
+{n:'Collège de Maisonneuve',c:'Collège',d:['cmaisonneuve.qc.ca'],k:['maisonneuve']},
+{n:'Collège Lionel-Groulx',c:'Collège',d:['clg.qc.ca'],k:['lionelgroulx']},
+{n:'Cégep du Vieux Montréal',c:'Collège',d:['cvm.qc.ca'],k:['vieuxmontreal']},
+{n:'Cégep Champlain',c:'Collège',d:['champlain.qc.ca'],k:['champlain']},
+{n:'Collège Montmorency',c:'Collège',d:['cmontmorency.qc.ca'],k:['montmorency']},
+{n:'Cégep de Sherbrooke',c:'Collège',d:['cegepsherbrooke.qc.ca'],k:['cegepsherbrooke']},
+{n:'Université de Montréal',c:'Université',d:['umontreal.ca'],k:['umontreal']},
+{n:'Université McGill',c:'Université',d:['mcgill.ca'],k:['mcgill']},
+{n:'Université Laval',c:'Université',d:['ulaval.ca'],k:['ulaval']},
+{n:'UQAM',c:'Université',d:['uqam.ca'],k:['uqam']},
+{n:'Université Concordia',c:'Université',d:['concordia.ca'],k:['concordia']},
+{n:'Université de Sherbrooke',c:'Université',d:['usherbrooke.ca'],k:['usherbrooke']},
+{n:'Université de Toronto',c:'Université',d:['utoronto.ca'],k:['utoronto']},
+{n:'Gouvernement du Canada (ARC, Service Canada…)',c:'Gouvernement',d:['canada.ca','gc.ca'],k:['canada']},
+{n:'Gouvernement du Québec',c:'Gouvernement',d:['quebec.ca','gouv.qc.ca'],k:['gouvqc']},
+{n:'Revenu Québec',c:'Gouvernement',d:['revenuquebec.ca'],k:['revenuquebec']},
+{n:'Postes Canada',c:'Service public',d:['canadapost-postescanada.ca','canadapost.ca','postescanada.ca'],k:['canadapost','postescanada']},
+{n:'Hydro-Québec',c:'Service public',d:['hydroquebec.com'],k:['hydroquebec']},
+];
+const SLD=['gouv.qc.ca','qc.ca','gc.ca','on.ca','bc.ca','ab.ca','co.uk'].sort((a,b)=>b.length-a.length);
+const BADTLD=['zip','xyz','top','click','buzz','tk','ml','ga','cf','gq','icu','rest','cfd','sbs','monster'];
+const SHORT=['bit.ly','tinyurl.com','t.co','is.gd','cutt.ly','rb.gy','ow.ly','goo.gl'];
+
+// ---------- Outils ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function split(h){for(const s of SLD)if(h.endsWith('.'+s)){const r=h.slice(0,-s.length-1).split('.');const l=r.pop();return{label:l,dom:l+'.'+s,sub:r}}
+ const p=h.split('.');const t=p.pop();const l=p.pop()||'';return{label:l,dom:l+'.'+t,sub:p,tld:t}}
+function lev(a,b){const m=[];for(let i=0;i<=a.length;i++)m[i]=[i];for(let j=0;j<=b.length;j++)m[0][j]=j;
+ for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+const norm=s=>s.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/rn/g,'m').replace(/vv/g,'w').replace(/0/g,'o').replace(/[1|]/g,'l').replace(/3/g,'e').replace(/5/g,'s');
+
+// ---------- Analyse locale ----------
+function local(raw){
+ let t=raw.trim();if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(t))t='https://'+t;
+ let u;try{u=new URL(t)}catch{return{err:'Adresse invalide.'}}
+ if(!/^https?:$/.test(u.protocol))return{err:'Seuls les liens http et https sont analysés.'};
+ const host=u.hostname.toLowerCase().replace(/\.$/,'');
+ const r={url:u.href,host,reasons:[],score:0,org:null,trusted:false};
+ const add=(p,m)=>{r.score+=p;r.reasons.push(m)};
+ const si=split(host);
+ const hit=DB.find(b=>b.d.some(d=>host===d||host.endsWith('.'+d)));
+ if(hit){
+  if(u.protocol==='https:'&&!u.username&&!/^xn--|\.xn--/.test(host)){r.trusted=true;r.org=hit.n;r.cat=hit.c;
+   r.reasons.push('Le domaine « '+si.dom+' » figure dans la base de sites officiels ('+hit.n+').');return r}
+ }
+ // Usurpation de marque
+ let best={p:0};const tokens=host.split(/[.-]/);
+ for(const b of DB){
+  const labs=[...new Set(b.d.map(d=>split(d).label))];
+  for(const lab of labs){let p=0,m='';
+   if(norm(si.label)===lab&&si.label!==lab){p=85;m='Caractères trompeurs : « '+si.label+' » imite « '+lab+' » (ex. 0 pour o, rn pour m).'}
+   else if(si.label===lab){p=60;m='Utilise le nom « '+lab+' » avec une extension non officielle (.'+(si.dom.split('.').slice(1).join('.'))+').'}
+   else if(lab.length>=6&&lev(si.label,lab)<=(lab.length>=9?2:1)){p=80;m='Orthographe presque identique à « '+lab+' » (typosquatting).'}
+   else if(lab.length>=5&&host.includes(lab)){p=60;m='Contient « '+lab+' » mais le domaine réel est « '+si.dom+' ».'}
+   else if(lab.length<5&&tokens.includes(lab)){p=45;m='Contient « '+lab+' » mais le domaine réel est « '+si.dom+' ».'}
+   if(p>best.p)best={p,m,b}}
+  for(const k of b.k)if(k.length>=5&&host.includes(k)&&best.p<55)best={p:55,m:'Contient « '+k+' » mais le domaine réel est « '+si.dom+' ».',b}}
+ if(best.p){r.org=best.b.n;r.cat=best.b.c;add(best.p,best.m)}
+ // Signaux généraux
+ if(hit&&u.protocol!=='https:')add(15,'Le domaine est officiel mais la connexion n’est pas chiffrée (http).');
+ else if(u.protocol!=='https:')add(15,'Connexion non chiffrée (http).');
+ if(/^\d{1,3}(\.\d{1,3}){3}$/.test(host)||/^\[/.test(u.host))add(35,'Adresse IP au lieu d’un nom de domaine.');
+ if(u.username||u.href.split('?')[0].includes('@'))add(30,'Contient « @ » : le vrai site est caché après ce symbole.');
+ if(/xn--/.test(host))add(30,'Nom de domaine internationalisé (punycode), souvent utilisé pour imiter un site.');
+ if(/[^\x00-\x7f]/.test(raw))add(25,'Contient des caractères non ASCII pouvant ressembler à des lettres normales.');
+ if(si.sub.length>=3)add(15,'Nombre inhabituel de sous-domaines ('+si.sub.length+').');
+ if(BADTLD.includes(si.tld))add(20,'Extension « .'+si.tld+' » fréquemment associée à des abus.');
+ if(SHORT.includes(host))add(20,'Lien raccourci : la destination réelle est masquée.');
+ if(/(login|verify|secure|update|confirm|compte|verif|connexion|signin|password)/i.test(u.pathname+u.hostname)&&r.score>0)add(10,'Mots typiques de l’hameçonnage dans l’adresse (connexion, vérification…).');
+ return r}
+
+// ---------- VirusTotal via le serveur ----------
+async function vtScan(url){
+ const r=await fetch('/api/vt',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url})});
+ const j=await r.json();if(!r.ok)throw new Error(j.error||'Erreur VirusTotal');return j}
+
+// ---------- Verdict et rapport ----------
+async function run(raw){
+ $('out').innerHTML='';const L=local(raw);
+ if(L.err){$('msg').textContent=L.err;return}
+ $('msg').textContent='Analyse en cours…';
+ let V=null,verr=null;
+ if(!L.trusted){try{V=await vtScan(L.url)}catch(e){verr=e.message}}
+ let score=L.score;const why=[...L.reasons];
+ if(V){const s=V.stats,m=s.malicious||0,su=s.suspicious||0;
+  if(m>=3){score+=70;why.push(m+' moteurs de sécurité signalent ce lien comme malveillant.')}
+  else if(m>0){score+=35;why.push(m+' moteur(s) de sécurité signalent ce lien.')}
+  if(su>0){score+=15;why.push(su+' moteur(s) le jugent suspect.')}
+  if(!m&&!su)why.push('Aucun moteur VirusTotal ne signale ce lien.');
+  if(V.domain&&V.domain.created&&(Date.now()/1000-V.domain.created)<30*86400){score+=20;why.push('Domaine enregistré depuis moins de 30 jours.')}}
+ if(L.trusted)score=0;
+ const st=score>=70?'malveillant':score>=30?'suspect':'fiable';
+ const lvl=score>=70?'élevé':score>=30?'moyen':'faible';
+ const lab={fiable:'Fiable',suspect:'Suspect',malveillant:'Malveillant'}[st];
+ if(st==='fiable'&&!L.trusted)why.push('Site absent de la base officielle : « fiable » signifie seulement qu’aucune menace connue n’a été trouvée.');
+ let h='<section class="card"><span class="badge '+st+'">'+lab+'</span> <strong>Niveau de danger : '+lvl+'</strong>'
+ +'<div class="url">'+esc(L.url)+'</div><dl>'
+ +'<dt>Organisme concerné</dt><dd>'+(L.org?esc(L.org)+(L.trusted?' (site officiel)':' — <strong>possible usurpation</strong>'):'Aucun détecté')+'</dd>'
+ +'<dt>Domaine</dt><dd>'+esc(L.host)+'</dd></dl>'
+ +'<h2>Pourquoi ce résultat</h2><ul>'+why.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+ if(V){const s=V.stats,tot=(s.malicious||0)+(s.suspicious||0)+(s.harmless||0)+(s.undetected||0)||1,pc=n=>((n||0)/tot*100)+'%';
+  h+='<h2>Résultats VirusTotal</h2><div class="bar" role="img" aria-label="Répartition des verdicts"><i style="width:'+pc(s.malicious)+';background:var(--bad)"></i><i style="width:'+pc(s.suspicious)+';background:var(--warn)"></i><i style="width:'+pc(s.harmless)+';background:var(--ok)"></i></div>'
+  +'<table><tr><td>Menace détectée (malveillant)</td><td>'+(s.malicious||0)+'</td></tr><tr><td>Suspect</td><td>'+(s.suspicious||0)+'</td></tr><tr><td>Aucune menace</td><td>'+(s.harmless||0)+'</td></tr><tr><td>Non évalué</td><td>'+(s.undetected||0)+'</td></tr></table>';
+  if(V.flagged.length)h+='<h2>Moteurs ayant signalé le lien</h2><table>'+V.flagged.map(f=>'<tr><td>'+esc(f.engine)+'</td><td>'+esc(f.result||f.category)+'</td></tr>').join('')+'</table>';
+  const info=[];if(V.reputation!=null)info.push(['Réputation',V.reputation]);
+  if(V.categories&&Object.keys(V.categories).length)info.push(['Catégories',[...new Set(Object.values(V.categories))].join(', ')]);
+  if(V.domain){if(V.domain.registrar)info.push(['Registraire',V.domain.registrar]);if(V.domain.created)info.push(['Domaine créé le',new Date(V.domain.created*1000).toLocaleDateString('fr-CA')])}
+  if(info.length)h+='<h2>Informations sur le domaine</h2><table>'+info.map(i=>'<tr><td>'+esc(i[0])+'</td><td>'+esc(i[1])+'</td></tr>').join('')+'</table>';
+  h+='<p><a href="'+esc(V.link)+'" target="_blank" rel="noopener noreferrer">Rapport complet sur VirusTotal</a></p>'}
+ if(verr)h+='<p style="color:var(--warn)">Analyse VirusTotal indisponible : '+esc(verr)+'. Résultat basé uniquement sur la vérification locale.</p>';
+ $('out').innerHTML=h+'</section>';$('msg').textContent='';
+}
+
+// ---------- Interface ----------
+function tab(n){$('p1').classList.toggle('hide',n!==1);$('p2').classList.toggle('hide',n!==2);
+ $('t1').setAttribute('aria-selected',n===1);$('t2').setAttribute('aria-selected',n===2);if(n!==2)stopCam()}
+$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+$('go').onclick=()=>run($('u').value);
+$('u').addEventListener('keydown',e=>{if(e.key==='Enter')run($('u').value)});
+let stream=null;
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('v').classList.add('hide')}
+// size : taille cible du plus grand côté (0 = taille d'origine) ; still : image fixe → fond blanc, marge et inversion
+function decode(img,w,h,size,still){if(size){const k=size/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}
+ const p=still?Math.round(Math.max(w,h)*0.15):0,W=w+2*p,H=h+2*p;
+ const c=$('c'),x=c.getContext('2d',{willReadFrequently:true});c.width=W;c.height=H;
+ x.imageSmoothingEnabled=!size||size<Math.max(img.naturalWidth||0,img.naturalHeight||0);
+ if(still){x.fillStyle='#fff';x.fillRect(0,0,W,H)}x.drawImage(img,p,p,w,h);
+ return jsQR(x.getImageData(0,0,W,H).data,W,H,{inversionAttempts:still?'attemptBoth':'dontInvert'})}
+function found(txt){stopCam();$('u').value=txt;$('msg').textContent='Code QR lu. Analyse en cours…';run(txt)}
+$('cam').onclick=async()=>{
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  const v=$('v');v.srcObject=stream;v.classList.remove('hide');await v.play();$('msg').textContent='Placez le code QR devant la caméra.';
+  const tick=()=>{if(!stream)return;if(v.readyState>=2&&v.videoWidth){const q=decode(v,v.videoWidth,v.videoHeight);if(q&&q.data)return found(q.data)}requestAnimationFrame(tick)};tick()
+ }catch(e){$('msg').textContent='Caméra inaccessible (autorisation refusée ou page non sécurisée). Utilisez une image ou saisissez le lien.'}};
+$('upl').onclick=()=>$('f').click();
+$('f').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const img=new Image();
+ $('msg').textContent='Lecture de l’image…';
+ img.onload=()=>{let q=null;
+  try{if(typeof jsQR!=='function')throw new Error('bibliothèque jsQR non chargée (connexion Internet ?)');
+   for(const s of [0,800,1200,500,1600,300])if((q=decode(img,img.naturalWidth,img.naturalHeight,s,true))&&q.data)break;
+  }catch(err){$('msg').textContent='Erreur : '+err.message}
+  URL.revokeObjectURL(img.src);
+  if(q&&q.data)found(q.data);else if(!$('msg').textContent.startsWith('Erreur'))$('msg').textContent='Aucun code QR lisible dans cette image.'};
+ img.onerror=()=>$('msg').textContent='Image illisible.';img.src=URL.createObjectURL(f)};
+</script>
+</body>
+</html>
