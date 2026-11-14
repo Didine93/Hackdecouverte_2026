@@ -31,6 +31,8 @@ Il y a deux parties, et la séparation est importante parce qu'un navigateur ne 
 | Certificat | À qui le certificat a été délivré et quand | Module `ssl` de Python | Moyenne |
 | Contenu de la page | Un champ de mot de passe ou de numéro de carte sur la page finale | Récupérer le HTML et chercher `<input type="password">` | Moyenne |
 
+Le détail des vérifications du domaine (sosie, caractères suspects, âge) et la grille de points sont dans [verification-domaine.md](verification-domaine.md).
+
 Chaque constat ajoute des points à un score de risque, et le total détermine la couleur. Le calcul du score est notre propre logique, et c'est ce que les juges veulent nous voir expliquer.
 
 ## Quoi construire avec un seul codeur
