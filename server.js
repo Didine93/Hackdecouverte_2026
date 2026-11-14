@@ -1,11 +1,12 @@
-// Serveur LienClair — Node 18+, aucune dépendance.
-// Lancer (PowerShell) : $env:VT_API_KEY="votre_cle"; node server.js  → http://localhost:3000
+// Serveur QR Guard — Node 18+, aucune dépendance.
+// Lancer (bash)       : VT_API_KEY="votre_cle" node server.js       → http://localhost:3000
+// Lancer (PowerShell) : $env:VT_API_KEY="votre_cle"; node server.js
 const http = require('http'), fs = require('fs'), path = require('path');
 const KEY = process.env.VT_API_KEY, PORT = process.env.PORT || 3000;
 const VT = 'https://www.virustotal.com/api/v3';
 const hits = new Map(); // limitation simple : 8 analyses / minute / IP
 
-const vt = (p, opt = {}) => fetch(VT + p, { ...opt, headers: { 'x-apikey': KEY, ...(opt.headers || {}) } });
+const vt = (p, opt = {}) => fetch(VT + p, { ...opt, headers: { 'x-apikey': KEY, ...opt.headers } });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function analyse(url) {
@@ -21,7 +22,7 @@ async function analyse(url) {
   const flagged = Object.values(a.results || {})
     .filter(r => r.category === 'malicious' || r.category === 'suspicious')
     .map(r => ({ engine: r.engine_name, category: r.category, result: r.result }));
-  const out = { stats: a.stats, flagged, completed: a.status === 'completed' };
+  const out = { stats: a.stats, flagged };
   const b64 = Buffer.from(url).toString('base64url');
   out.link = 'https://www.virustotal.com/gui/url/' + b64;
   try { // informations complémentaires (facultatives)
@@ -29,18 +30,26 @@ async function analyse(url) {
     out.reputation = u.reputation; out.categories = u.categories;
     const host = new URL(url).hostname;
     const d = (await (await vt('/domains/' + host)).json()).data.attributes;
-    out.domain = { registrar: d.registrar, created: d.creation_date, reputation: d.reputation, tld: d.tld };
+    out.domain = { registrar: d.registrar, created: d.creation_date };
   } catch (e) { /* ignoré */ }
   return out;
 }
 
-http.createServer(async (req, res) => {
+http.createServer((req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:");
     return res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
+  }
+  const ASSETS = { // logo et police de QR Guard
+    '/fonts/Redaction70-Bold.ttf': ['font/ttf', 'qr-guard/fonts/Redaction70-Bold.ttf'],
+    '/images/qr-logo.png': ['image/png', 'qr-guard/images/qr-logo.png'],
+  };
+  if (req.method === 'GET' && ASSETS[req.url]) {
+    res.setHeader('Content-Type', ASSETS[req.url][0]);
+    return res.end(fs.readFileSync(path.join(__dirname, ASSETS[req.url][1])));
   }
   if (req.method === 'GET' && req.url === '/jsQR.js') {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
@@ -65,4 +74,4 @@ http.createServer(async (req, res) => {
     return;
   }
   res.statusCode = 404; res.end('Introuvable');
-}).listen(PORT, () => console.log('LienClair → http://localhost:' + PORT));
+}).listen(PORT, () => console.log('QR Guard → http://localhost:' + PORT));

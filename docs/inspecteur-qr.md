@@ -43,9 +43,10 @@ Chaque constat ajoute des points à un score de risque, et le total donne un ver
 Cette version est à elle seule un projet complet et démontrable.
 
 **Ensuite, dans cet ordre, si le temps le permet :**
-1. Âge du domaine (requête RDAP).
-2. Forme du lien : pas de HTTPS, lien très long, astuces avec `@`.
-3. Un résumé en langage clair rédigé par Claude à partir de nos constats.
+1. Anatomie du lien : le lien découpé en parties colorées (voir [anatomie-du-lien.md](anatomie-du-lien.md)).
+2. Âge du domaine (requête RDAP).
+3. Forme du lien : pas de HTTPS, lien très long, astuces avec `@`.
+4. Un résumé en langage clair rédigé par Claude à partir de nos constats.
 
 **Seulement avec un serveur (Python avec Flask), donc en dernier :**
 - Chaîne de redirections, pour voir la vraie destination derrière un lien court (bit.ly).
@@ -66,12 +67,14 @@ Chaque membre devrait pouvoir expliquer au moins une vérification à un juge.
 
 ## Risques à prévoir
 
-- **La caméra du téléphone exige HTTPS.** Les navigateurs n'autorisent l'accès à la caméra que sur une page sécurisée. Ça fonctionne sur le portable à `localhost`. Pour un téléphone, il faut héberger la page (GitHub Pages suffit puisqu'il n'y a pas de serveur) ou faire la démo avec la webcam du portable.
+- **La caméra du téléphone exige HTTPS.** Les navigateurs n'autorisent l'accès à la caméra que sur une page sécurisée. Ça fonctionne sur le portable à `localhost` ; pour un téléphone, voir [camera-et-acces-mobile.md](camera-et-acces-mobile.md).
 - **Ne pas tester sur de vrais sites d'hameçonnage.** Le code QR de la fausse affiche contient un domaine sosie inventé ; comme QR Guard n'ouvre jamais le lien, le site n'a pas besoin d'exister.
 - **L'âge du domaine dépend d'un service externe.** La requête peut être lente, échouer, ou être bloquée par le navigateur. Afficher d'abord les constats instantanés, et « âge inconnu » si elle ne répond pas.
 - **Si la caméra ne fonctionne pas à temps,** on fait la démo avec des liens collés.
 
 ## La démo
+
+Les codes QR à préparer et la façon de les afficher sans imprimante sont dans [codes-qr-demo.md](codes-qr-demo.md).
 
 1. Raconter l'histoire : « Vous voyez cette affiche dans un couloir. Est-ce que vous la scanneriez ? »
 2. Scanner l'affiche légitime : vert.

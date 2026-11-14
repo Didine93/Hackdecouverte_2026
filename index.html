@@ -3,20 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LienClair — Vérifier un lien ou un code QR</title>
+<title>QR Guard — Vérifier un lien ou un code QR</title>
+<link rel="icon" type="image/png" href="/images/qr-logo.png">
 <script src="/jsQR.js"></script>
 <style>
-:root{--bg:#f3f6f4;--card:#fff;--ink:#14231c;--mute:#5b6b63;--line:#d5ded9;--acc:#0b6b4f;--acc-ink:#fff;--ok:#0b6b4f;--okbg:#e0f2ea;--warn:#8a5a00;--warnbg:#fdf1d3;--bad:#a4161a;--badbg:#fbe0e0}
-@media(prefers-color-scheme:dark){:root{--bg:#0e1714;--card:#16221d;--ink:#e6f0ea;--mute:#98aba1;--line:#2a3b33;--acc:#4cc79b;--acc-ink:#06130e;--ok:#6fe0b4;--okbg:#12362a;--warn:#f0c15a;--warnbg:#3a2d0c;--bad:#ff8d8d;--badbg:#401617}}
+:root{--bg:#f3f6f4;--card:#fff;--ink:#14231c;--mute:#5b6b63;--line:#d5ded9;--logo:#263a2e;--acc:#0b6b4f;--acc-ink:#fff;--ok:#0b6b4f;--okbg:#e0f2ea;--warn:#8a5a00;--warnbg:#fdf1d3;--bad:#a4161a;--badbg:#fbe0e0}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1714;--card:#16221d;--ink:#e6f0ea;--mute:#98aba1;--line:#2a3b33;--logo:#c2ceaa;--acc:#4cc79b;--acc-ink:#06130e;--ok:#6fe0b4;--okbg:#12362a;--warn:#f0c15a;--warnbg:#3a2d0c;--bad:#ff8d8d;--badbg:#401617}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,sans-serif}
 main{max-width:720px;margin:0 auto;padding:28px 18px 60px}
-h1{font:700 2rem/1.15 Georgia,"Times New Roman",serif;margin:0 0 6px}
+@font-face{font-family:'Redaction 70';src:url('/fonts/Redaction70-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
+h1{font:700 2.6rem/1.15 'Redaction 70',Georgia,serif;letter-spacing:3px;color:var(--logo);margin:0}
+.logo{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.logo img{width:65px;height:65px;object-fit:contain}
 .sub{color:var(--mute);margin:0 0 22px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
-.tabs{display:flex;gap:6px;margin-bottom:14px}
-.tabs button{flex:1;padding:10px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;font:inherit;cursor:pointer}
-.tabs button[aria-selected=true]{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
 button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 input[type=text]{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
 .btn{margin-top:10px;padding:11px 18px;border:0;border-radius:8px;background:var(--acc);color:var(--acc-ink);font:600 1rem inherit;cursor:pointer}
@@ -35,24 +36,48 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{text-align:left
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0;background:var(--line)}
 .bar i{display:block}
 footer{margin-top:26px;color:var(--mute);font-size:.85rem}
+/* ----- Mise en page : une colonne, verdict en grand ----- */
+#out>*+*{margin-top:14px}
+
+main{max-width:640px;padding-top:9vh}
+h1{text-align:center;font-size:2.8rem}
+.sub{text-align:center;font-size:1.05rem}
+main>.card{border:0;background:transparent;padding:0}
+#p1{display:grid;grid-template-columns:1fr auto;gap:8px}
+#p1 label{grid-column:1/-1;position:absolute;left:-9999px}
+#p1 input{padding:16px;font-size:1.1rem;background:var(--card);border-width:2px;border-radius:12px}
+#p1 .btn{margin:0;border-radius:12px;padding:0 22px}
+#p2{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:6px}
+#p2 video{flex-basis:100%}
+#p2 .btn{margin-right:0;font-weight:400;font-size:.92rem;padding:8px 14px}
+#msg{text-align:center}
+.hint{text-align:center;color:var(--mute);margin:0 0 8px;font-size:.92rem}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{border:1px dashed var(--line);background:transparent;color:var(--ink);border-radius:99px;padding:6px 12px;font:.85rem Consolas,monospace;cursor:pointer}
+.verdictA{border-radius:16px;padding:26px 20px;text-align:center}
+.verdictA.fiable{background:var(--okbg);color:var(--ok)}.verdictA.suspect{background:var(--warnbg);color:var(--warn)}.verdictA.malveillant{background:var(--badbg);color:var(--bad)}
+.verdictA .kicker{margin:0;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+.verdictA .big{margin:2px 0;font:700 3.2rem/1.1 Georgia,"Times New Roman",serif}
+.verdictA .act{margin:0 0 14px;font-weight:600}
+.verdictA .url{background:var(--card);color:var(--ink);margin:0;text-align:left}
+details.card summary{cursor:pointer;font-weight:600}
+.card>h2:first-child{margin-top:0}
+
+.logo{justify-content:center}
 </style>
 </head>
 <body>
 <main>
-<h1>LienClair</h1>
+<div class="logo"><img src="/images/qr-logo.png" alt="" width="65" height="65"><h1>QR GUARD</h1></div>
 <p class="sub">Collez un lien ou scannez un code QR avant d’y toucher.</p>
 
 <section class="card">
-  <div class="tabs" role="tablist">
-    <button role="tab" id="t1" aria-selected="true">Saisir un lien</button>
-    <button role="tab" id="t2" aria-selected="false">Code QR</button>
-  </div>
   <div id="p1">
     <label for="u">Adresse à vérifier</label>
     <input type="text" id="u" placeholder="https://exemple.com" autocomplete="off" spellcheck="false">
     <button class="btn" id="go">Analyser le lien</button>
   </div>
-  <div id="p2" class="hide">
+  <div id="p2">
     <video id="v" playsinline muted class="hide"></video>
     <canvas id="c" class="hide"></canvas>
     <button class="btn alt" id="cam">Ouvrir la caméra</button>
@@ -177,36 +202,15 @@ async function run(raw){
   if(!m&&!su)why.push('Aucun moteur VirusTotal ne signale ce lien.');
   if(V.domain&&V.domain.created&&(Date.now()/1000-V.domain.created)<30*86400){score+=20;why.push('Domaine enregistré depuis moins de 30 jours.')}}
  if(L.trusted)score=0;
- const st=score>=70?'malveillant':score>=30?'suspect':'fiable';
- const lvl=score>=70?'élevé':score>=30?'moyen':'faible';
- const lab={fiable:'Fiable',suspect:'Suspect',malveillant:'Malveillant'}[st];
- if(st==='fiable'&&!L.trusted)why.push('Site absent de la base officielle : « fiable » signifie seulement qu’aucune menace connue n’a été trouvée.');
- let h='<section class="card"><span class="badge '+st+'">'+lab+'</span> <strong>Niveau de danger : '+lvl+'</strong>'
- +'<div class="url">'+esc(L.url)+'</div><dl>'
- +'<dt>Organisme concerné</dt><dd>'+(L.org?esc(L.org)+(L.trusted?' (site officiel)':' — <strong>possible usurpation</strong>'):'Aucun détecté')+'</dd>'
- +'<dt>Domaine</dt><dd>'+esc(L.host)+'</dd></dl>'
- +'<h2>Pourquoi ce résultat</h2><ul>'+why.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
- if(V){const s=V.stats,tot=(s.malicious||0)+(s.suspicious||0)+(s.harmless||0)+(s.undetected||0)||1,pc=n=>((n||0)/tot*100)+'%';
-  h+='<h2>Résultats VirusTotal</h2><div class="bar" role="img" aria-label="Répartition des verdicts"><i style="width:'+pc(s.malicious)+';background:var(--bad)"></i><i style="width:'+pc(s.suspicious)+';background:var(--warn)"></i><i style="width:'+pc(s.harmless)+';background:var(--ok)"></i></div>'
-  +'<table><tr><td>Menace détectée (malveillant)</td><td>'+(s.malicious||0)+'</td></tr><tr><td>Suspect</td><td>'+(s.suspicious||0)+'</td></tr><tr><td>Aucune menace</td><td>'+(s.harmless||0)+'</td></tr><tr><td>Non évalué</td><td>'+(s.undetected||0)+'</td></tr></table>';
-  if(V.flagged.length)h+='<h2>Moteurs ayant signalé le lien</h2><table>'+V.flagged.map(f=>'<tr><td>'+esc(f.engine)+'</td><td>'+esc(f.result||f.category)+'</td></tr>').join('')+'</table>';
-  const info=[];if(V.reputation!=null)info.push(['Réputation',V.reputation]);
-  if(V.categories&&Object.keys(V.categories).length)info.push(['Catégories',[...new Set(Object.values(V.categories))].join(', ')]);
-  if(V.domain){if(V.domain.registrar)info.push(['Registraire',V.domain.registrar]);if(V.domain.created)info.push(['Domaine créé le',new Date(V.domain.created*1000).toLocaleDateString('fr-CA')])}
-  if(info.length)h+='<h2>Informations sur le domaine</h2><table>'+info.map(i=>'<tr><td>'+esc(i[0])+'</td><td>'+esc(i[1])+'</td></tr>').join('')+'</table>';
-  h+='<p><a href="'+esc(V.link)+'" target="_blank" rel="noopener noreferrer">Rapport complet sur VirusTotal</a></p>'}
- if(verr)h+='<p style="color:var(--warn)">Analyse VirusTotal indisponible : '+esc(verr)+'. Résultat basé uniquement sur la vérification locale.</p>';
- $('out').innerHTML=h+'</section>';$('msg').textContent='';
+ if(score<30&&!L.trusted)why.push('Site absent de la base officielle : « fiable » signifie seulement qu’aucune menace connue n’a été trouvée.');
+ last={L,V,verr,score,why};draw();$('msg').textContent='';
 }
 
 // ---------- Interface ----------
-function tab(n){$('p1').classList.toggle('hide',n!==1);$('p2').classList.toggle('hide',n!==2);
- $('t1').setAttribute('aria-selected',n===1);$('t2').setAttribute('aria-selected',n===2);if(n!==2)stopCam()}
-$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
 $('go').onclick=()=>run($('u').value);
 $('u').addEventListener('keydown',e=>{if(e.key==='Enter')run($('u').value)});
 let stream=null;
-function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('v').classList.add('hide')}
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('v').classList.add('hide');$('cam').textContent='Ouvrir la caméra'}
 // size : taille cible du plus grand côté (0 = taille d'origine) ; still : image fixe → fond blanc, marge et inversion
 function decode(img,w,h,size,still){if(size){const k=size/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}
  const p=still?Math.round(Math.max(w,h)*0.15):0,W=w+2*p,H=h+2*p;
@@ -216,20 +220,48 @@ function decode(img,w,h,size,still){if(size){const k=size/Math.max(w,h);w=Math.r
  return jsQR(x.getImageData(0,0,W,H).data,W,H,{inversionAttempts:still?'attemptBoth':'dontInvert'})}
 function found(txt){stopCam();$('u').value=txt;$('msg').textContent='Code QR lu. Analyse en cours…';run(txt)}
 $('cam').onclick=async()=>{
+ if(stream){stopCam();$('msg').textContent='';return}
  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-  const v=$('v');v.srcObject=stream;v.classList.remove('hide');await v.play();$('msg').textContent='Placez le code QR devant la caméra.';
+  const v=$('v');v.srcObject=stream;v.classList.remove('hide');await v.play();$('cam').textContent='Fermer la caméra';$('msg').textContent='Placez le code QR devant la caméra.';
   const tick=()=>{if(!stream)return;if(v.readyState>=2&&v.videoWidth){const q=decode(v,v.videoWidth,v.videoHeight);if(q&&q.data)return found(q.data)}requestAnimationFrame(tick)};tick()
  }catch(e){$('msg').textContent='Caméra inaccessible (autorisation refusée ou page non sécurisée). Utilisez une image ou saisissez le lien.'}};
 $('upl').onclick=()=>$('f').click();
 $('f').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const img=new Image();
  $('msg').textContent='Lecture de l’image…';
  img.onload=()=>{let q=null;
-  try{if(typeof jsQR!=='function')throw new Error('bibliothèque jsQR non chargée (connexion Internet ?)');
+  try{if(typeof jsQR!=='function')throw new Error('bibliothèque jsQR non chargée');
    for(const s of [0,800,1200,500,1600,300])if((q=decode(img,img.naturalWidth,img.naturalHeight,s,true))&&q.data)break;
   }catch(err){$('msg').textContent='Erreur : '+err.message}
   URL.revokeObjectURL(img.src);
   if(q&&q.data)found(q.data);else if(!$('msg').textContent.startsWith('Erreur'))$('msg').textContent='Aucun code QR lisible dans cette image.'};
  img.onerror=()=>$('msg').textContent='Image illisible.';img.src=URL.createObjectURL(f)};
+// ---------- Affichage du résultat ----------
+const EX=['desjardins.com','desjard1ns-securite.xyz/connexion','http://192.168.4.20/login'];
+let last=null;
+function verdict(d){const st=d.score>=70?'malveillant':d.score>=30?'suspect':'fiable';
+ return{st,lvl:{fiable:'faible',suspect:'moyen',malveillant:'élevé'}[st],lab:{fiable:'Fiable',suspect:'Suspect',malveillant:'Malveillant'}[st]}}
+const orgTxt=L=>L.org?esc(L.org)+(L.trusted?' (site officiel)':' — <strong>possible usurpation</strong>'):'Aucun détecté';
+const whyHtml=d=>'<h2>Pourquoi ce résultat</h2><ul>'+d.why.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+const verrHtml=d=>d.verr?'<p style="color:var(--warn)">Analyse VirusTotal indisponible : '+esc(d.verr)+'. Résultat basé uniquement sur la vérification locale.</p>':'';
+function vtBlock(V){const s=V.stats,tot=(s.malicious||0)+(s.suspicious||0)+(s.harmless||0)+(s.undetected||0)||1,pc=n=>((n||0)/tot*100)+'%';
+ let h='<div class="bar" role="img" aria-label="Répartition des verdicts"><i style="width:'+pc(s.malicious)+';background:var(--bad)"></i><i style="width:'+pc(s.suspicious)+';background:var(--warn)"></i><i style="width:'+pc(s.harmless)+';background:var(--ok)"></i></div>'
+ +'<table><tr><td>Menace détectée (malveillant)</td><td>'+(s.malicious||0)+'</td></tr><tr><td>Suspect</td><td>'+(s.suspicious||0)+'</td></tr><tr><td>Aucune menace</td><td>'+(s.harmless||0)+'</td></tr><tr><td>Non évalué</td><td>'+(s.undetected||0)+'</td></tr></table>';
+ if(V.flagged.length)h+='<h2>Moteurs ayant signalé le lien</h2><table>'+V.flagged.map(f=>'<tr><td>'+esc(f.engine)+'</td><td>'+esc(f.result||f.category)+'</td></tr>').join('')+'</table>';
+ if(V.domain&&V.domain.created)h+='<p>Domaine créé le '+new Date(V.domain.created*1000).toLocaleDateString('fr-CA')+(V.domain.registrar?' — '+esc(V.domain.registrar):'')+'</p>';
+ return h+'<p><a href="'+esc(V.link)+'" target="_blank" rel="noopener noreferrer">Rapport complet sur VirusTotal</a></p>'}
+
+// Le verdict en très grand, les raisons ensuite, les détails VirusTotal repliés.
+function render(d){
+ if(!d)return '<p class="hint">Pas de lien sous la main ? Essayez un exemple :</p><div class="chips">'+EX.map(e=>'<button class="chip" data-ex="'+esc(e)+'">'+esc(e)+'</button>').join('')+'</div>';
+ const v=verdict(d),L=d.L;
+ const act=L.trusted?'Site officiel reconnu.':{fiable:'Aucune menace connue.',suspect:'Prudence : vérifiez avant d’ouvrir.',malveillant:'N’ouvrez pas ce lien.'}[v.st];
+ return '<section class="verdictA '+v.st+'"><p class="kicker">Niveau de danger : '+v.lvl+'</p><p class="big">'+v.lab+'</p><p class="act">'+act+'</p><div class="url">'+esc(L.url)+'</div></section>'
+ +'<section class="card">'+whyHtml(d)+'<p><span style="color:var(--mute)">Organisme concerné :</span> '+orgTxt(L)+'</p>'+verrHtml(d)+'</section>'
+ +(d.V?'<details class="card"><summary>Détails VirusTotal</summary>'+vtBlock(d.V)+'</details>':'')}
+
+function draw(){$('out').innerHTML=render(last)}
+$('out').addEventListener('click',e=>{const x=e.target.dataset.ex;if(x){$('u').value=x;run(x)}});
+draw();
 </script>
 </body>
 </html>
