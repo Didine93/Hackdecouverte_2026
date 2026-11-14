@@ -1,51 +1,75 @@
 
-/* Style général */
+/* ========================================
+   POLICES PERSONNALISÉES
+======================================== */
 
 @font-face {
-    font-family: 'Redaction 70';
-    src: url('./fonts/Redaction70-Regular.ttf') format('truetype');
+    font-family: 'Redaction 20';
+    src: url('./fonts/Redaction20-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'Redaction 70';
+    src: url('./fonts/Redaction70-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+
+/* ========================================
+   STYLE GÉNÉRAL
+======================================== */
 
 body {
     margin: 0;
-    font-family: 'Redaction 70', serif;
-    background-color: #101827;
-    color: white;
+    font-family: 'Redaction 20', serif;
+    background-color: #192919;
+    color: #E8EBDD;
     text-align: center;
 }
 
-/* En-tête */
+
+/* ========================================
+   EN-TÊTE
+======================================== */
 
 header {
     padding: 40px 20px;
 }
 
-
 header h1 {
-    color: #60a5fa;
+    color: #C2CEAA;
     font-family: 'Redaction 70', serif;
-    font-size: 48px;    
+    font-weight: 700;
+    font-size: 48px;
     letter-spacing: 3px;
+    margin: 0;
 }
 
-/* Zone de scan */
+
+/* ========================================
+   ZONE DE SCAN
+======================================== */
 
 .scanner {
-    background-color: #1e293b;
+    background-color: #263A2E;
     max-width: 500px;
     margin: 30px auto;
     padding: 30px;
     border-radius: 15px;
 }
 
-/* Bouton */
+
+/* ========================================
+   BOUTON
+======================================== */
 
 button {
-    background-color: #2563eb;
-    color: white;
+    font-family: 'Redaction 70', serif;
+    background-color: #718B62;
+    color: #FFFFFF;
     border: none;
     padding: 15px 25px;
     border-radius: 8px;
@@ -54,14 +78,45 @@ button {
 }
 
 button:hover {
-    background-color: #1d4ed8;
+    background-color: #8CA579;
 }
 
-/* Résultat */
+
+/* ========================================
+   LOGO
+======================================== */
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.logo img {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+    position: relative;
+    left: -5px;
+    margin: 0;
+}
+
+.logo h1 {
+    margin: 0;
+    position: relative;
+    left: -7px;
+}
+
+
+/* ========================================
+   RÉSULTAT
+======================================== */
 
 #result {
     margin-top: 25px;
     padding: 15px;
-    background-color: #334155;
+    background-color: #354D3E;
+    color: #F0F2E8;
     border-radius: 8px;
 }
