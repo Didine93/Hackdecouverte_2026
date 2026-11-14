@@ -1,0 +1,51 @@
+#pour faire la page html :
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>QR Guard - Scanner sécurisé</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- En-tête -->
+    <header>
+        <h1>QR GUARD</h1>
+        <p>Votre protection contre les QR codes malveillants</p>
+    </header>
+
+    <!-- Contenu principal -->
+    <main>
+
+        <section class="scanner">
+
+            <h2>Analysez votre QR code</h2>
+
+            <p>
+                Scannez un QR code pour vérifier
+                si son contenu présente un risque.
+            </p>
+
+            <button id="scanButton">
+                Scanner un QR code
+            </button>
+
+            <div id="result">
+                En attente d'un QR code...
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
