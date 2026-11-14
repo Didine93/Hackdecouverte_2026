@@ -1,15 +1,16 @@
 # Vérification du domaine
 
-Détail d'une des vérifications de l'[inspecteur de codes QR](inspecteur-qr.md).
+**C'est le cœur de [QR Guard](inspecteur-qr.md) : la fonctionnalité qu'on construit en premier.** Elle s'écrit en JavaScript dans `qr-guard/script.js` et tourne dans le navigateur, sans serveur.
 
-La vérification prend la destination finale du lien, en extrait le nom de domaine, et pose trois questions : est-ce qu'il imite une marque connue, est-ce qu'il contient des caractères suspects, et quel âge a-t-il ?
+La vérification prend le lien décodé, en extrait le nom de domaine, et pose trois questions : est-ce qu'il imite une marque connue, est-ce qu'il contient des caractères suspects, et quel âge a-t-il ?
 
 ## Étape 0 : extraire la bonne partie du lien
 
 Dans `https://login.desjardins.com.secure-acces.co/compte`, la partie qui compte est le **domaine enregistré** : `secure-acces.co`. Tout ce qui est à sa gauche (`login.desjardins.com.`) est un sous-domaine que le propriétaire peut nommer comme il veut, et les fraudeurs s'en servent pour mettre un nom de confiance au début.
 
-- `urllib.parse` de Python donne le nom d'hôte.
-- La bibliothèque `tldextract` le découpe correctement en sous-domaine, domaine et suffixe (elle sait que `.co.uk` ou `.qc.ca` sont des suffixes, ce qu'un simple découpage sur les points rate).
+- En JavaScript, `new URL(lien).hostname` donne le nom d'hôte.
+- Pour le domaine enregistré, on découpe le nom d'hôte sur les points et on garde les deux derniers morceaux (`secure-acces` + `co`).
+- Exception : certains suffixes ont deux morceaux (`.qc.ca`, `.co.uk`, `.gouv.qc.ca`). On garde une courte liste de ces suffixes et, quand le nom d'hôte se termine par l'un d'eux, on garde un morceau de plus.
 
 ## Vérification 1 : est-ce qu'il imite une marque connue ?
 
@@ -19,7 +20,7 @@ On garde une liste d'environ 30 vrais domaines (`desjardins.com`, `paypal.com`, 
 - **Correspondance proche :** le nom est à une ou deux lettres d'une marque, comme `paypa1.com` ou `desjadins.com`. On le mesure avec la **distance d'édition** (Levenshtein) : le nombre de lettres à ajouter, enlever ou remplacer pour passer d'un mot à l'autre. `paypa1` → `paypal` demande 1 remplacement, donc la distance est 1. Une distance de 1 ou 2 sans correspondance exacte est un signe d'alerte fort.
 - **Nom de marque utilisé dans un autre domaine :** `desjardins-securite.co` ou `desjardins.com.secure-acces.co`. On vérifie simplement si un nom de marque apparaît quelque part dans le nom d'hôte complet alors que le domaine enregistré n'est pas celui de la marque. Ce cas attrape plus de vraies fraudes que la distance d'édition.
 
-La distance d'édition tient en une quinzaine de lignes de Python, ou en un appel à une bibliothèque comme `rapidfuzz`. L'écrire nous-mêmes en fait un bon morceau à expliquer aux juges.
+La distance d'édition tient en une quinzaine de lignes de JavaScript. L'écrire nous-mêmes en fait un bon morceau à expliquer aux juges.
 
 ## Vérification 2 : caractères suspects
 
@@ -32,11 +33,11 @@ La distance d'édition tient en une quinzaine de lignes de Python, ou en un appe
 
 Les domaines frauduleux sont en général enregistrés quelques jours avant d'être utilisés, alors que les vraies organisations ont le leur depuis des années.
 
-- Envoyer une requête à `https://rdap.org/domain/secure-acces.co`. RDAP est le remplaçant moderne de WHOIS, il est gratuit et ne demande pas de clé.
+- Envoyer une requête avec `fetch` à `https://rdap.org/domain/secure-acces.co`. RDAP est le remplaçant moderne de WHOIS, il est gratuit et ne demande pas de clé.
 - La réponse JSON contient une liste `events` ; celui dont `eventAction` vaut `"registration"` donne la date de création.
 - Soustraire de la date du jour : moins de 30 jours est un signe d'alerte fort, moins de 6 mois un signe léger.
 
-Certains suffixes ne publient pas cette date et la requête échoue parfois. Dans ce cas, afficher « âge inconnu » et n'ajouter aucun point : une réponse manquante n'est ni rassurante ni inquiétante.
+Certains suffixes ne publient pas cette date, et la requête échoue parfois ou peut être bloquée par le navigateur (à tester tôt). Dans ce cas, afficher « âge inconnu » et n'ajouter aucun point : une réponse manquante n'est ni rassurante ni inquiétante.
 
 ## Transformer le tout en score
 
